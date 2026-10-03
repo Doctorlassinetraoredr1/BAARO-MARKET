@@ -14,7 +14,11 @@
       "schedule": "*/15 * * * *"
     }
   ],
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/shipping-label", "destination": "/api/shipping?action=label" },
+    { "source": "/api/health", "destination": "/api/market?action=health" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

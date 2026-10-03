@@ -20,6 +20,7 @@ export default async function handler(req, res) {
     // --- Lectures publiques ---
     if (req.method === 'GET') {
       const action = String(req.query?.action || 'products');
+      if (action === 'health') return json(res, 200, { ok: true, service: 'BAARO-MARKET API', version: '2.0.0', timestamp: new Date().toISOString() });
       const q = String(req.query?.q || '').trim().slice(0, 100);
 
       if (action === 'products') {

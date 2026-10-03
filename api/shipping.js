@@ -2,6 +2,7 @@ import { publicClient } from './_supabase.js';
 import { HttpError, json, method, sendError } from '../lib/http.js';
 import { previewShipping } from '../lib/checkout.js';
 import { rateLimitAsync as rateLimit } from '../lib/ratelimit.js';
+import labelHandler from '../lib/label-handler.js';
 
 function parseBody(req) {
   let body = req.body;
@@ -17,6 +18,7 @@ function parseBody(req) {
  * Body: { items: [{product_id, quantity}], shipping_address: { line1, city, country, ... } }
  */
 export default async function handler(req, res) {
+  if (String(req.query?.action || '') === 'label') return labelHandler(req, res);
   try {
     method(req, ['POST']);
 
