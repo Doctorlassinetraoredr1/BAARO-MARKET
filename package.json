@@ -10,6 +10,7 @@
     "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "check": "node scripts/check-syntax.js",
     "check:env": "node --env-file=.env scripts/check-env.js",
+    "check:env:prod": "node --env-file=.env scripts/check-env.js --prod",
     "test": "node --test lib/*.test.js",
     "ci": "npm run check && npm test"
   },
