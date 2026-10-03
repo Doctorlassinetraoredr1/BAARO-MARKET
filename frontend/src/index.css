@@ -30,19 +30,19 @@
       disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98];
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98] bg-brand-600 text-white hover:bg-brand-700;
   }
   .btn-ink {
-    @apply btn bg-ink text-white hover:bg-slate-800;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98] bg-ink text-white hover:bg-slate-800;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-ink hover:bg-slate-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98] border border-slate-300 bg-white text-ink hover:bg-slate-50;
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98] bg-red-600 text-white hover:bg-red-700;
   }
   .btn-ghost {
-    @apply btn bg-transparent text-muted hover:text-ink hover:bg-slate-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-45 disabled:cursor-not-allowed active:scale-[0.98] bg-transparent text-muted hover:text-ink hover:bg-slate-100;
   }
   .input {
     @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm
