@@ -1,0 +1,19 @@
+{
+  "name": "baaro-market-international",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "check": "node scripts/check-syntax.js",
+    "check:env": "node --env-file=.env scripts/check-env.js",
+    "test": "node --test lib/*.test.js",
+    "ci": "npm run check && npm test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0"
+  }
+}
