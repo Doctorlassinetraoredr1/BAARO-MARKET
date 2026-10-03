@@ -3,6 +3,7 @@ import { HttpError, json, method, sendError } from '../lib/http.js';
 import { createOrdersFromItems, orderAmountMinor } from '../lib/checkout.js';
 import { createPaymentSession } from '../lib/providers.js';
 import { rateLimitAsync as rateLimit } from '../lib/ratelimit.js';
+import { expirePendingOrders } from '../lib/payments.js';
 
 function parseBody(req) {
   let body = req.body;
@@ -32,13 +33,33 @@ export default async function handler(req, res) {
     const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || user.id;
     const rl = await rateLimit(`checkout:${ip}`, { limit: 15, windowMs: 60_000 });
     if (!rl.ok) throw new HttpError(429, `Too many requests. Retry in ${rl.retryAfter}s`);
+    const rlUser = await rateLimit(`checkout:user:${user.id}`, { limit: 15, windowMs: 60_000 });
+    if (!rlUser.ok) throw new HttpError(429, `Too many requests. Retry in ${rlUser.retryAfter}s`);
+
+    // Le cron peut être rare (plan Vercel Hobby = 1 passage/jour) : on libère aussi le stock
+    // des commandes expirées à chaque checkout (borné, jamais bloquant).
+    try {
+      await expirePendingOrders({ olderThanMinutes: Number(process.env.ORDER_PENDING_TTL_MINUTES || 60), limit: 20 });
+    } catch (e) {
+      console.error('[checkout] opportunistic expiry', e?.message || e);
+    }
+
+    // Plafond de commandes non payées : empêche de bloquer le stock en spammant des checkouts.
+    const maxPending = Number(process.env.MAX_PENDING_ORDERS_PER_BUYER || 10);
+    const { count: pendingCount, error: pcErr } = await adminClient()
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('buyer_id', user.id)
+      .eq('status', 'pending');
+    if (pcErr) console.error('[checkout] pending count', pcErr.message || pcErr);
+    else if ((pendingCount || 0) >= maxPending) {
+      throw new HttpError(409, 'Too many unpaid orders. Complete or wait for them to expire before ordering again.');
+    }
 
     const body = parseBody(req);
     const items = body.items;
     const shippingAddress = body.shipping_address || null;
-    const shippingTotal = body.shipping_total != null ? body.shipping_total : null;
     const provider = String(body.provider || 'stripe').toLowerCase();
-    const autoShipping = body.auto_shipping !== false;
     const express = Boolean(body.express);
 
     if (!['stripe', 'paypal', 'adyen'].includes(provider)) {
@@ -49,8 +70,6 @@ export default async function handler(req, res) {
       buyerId: user.id,
       items,
       shippingAddress,
-      shippingTotal,
-      autoShipping,
       express,
     });
 

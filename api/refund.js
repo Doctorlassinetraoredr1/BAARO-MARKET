@@ -29,6 +29,8 @@ export default async function handler(req, res) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || user.id;
     const rl = await rateLimit(`refund:${ip}`, { limit: 10, windowMs: 60_000 });
     if (!rl.ok) throw new HttpError(429, `Too many requests. Retry in ${rl.retryAfter}s`);
+    const rlUser = await rateLimit(`refund:user:${user.id}`, { limit: 10, windowMs: 60_000 });
+    if (!rlUser.ok) throw new HttpError(429, `Too many requests. Retry in ${rlUser.retryAfter}s`);
 
     const body = parseBody(req);
     if (!UUID_RE.test(String(body.order_id || ''))) throw new HttpError(400, 'Invalid order_id');

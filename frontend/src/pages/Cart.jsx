@@ -78,6 +78,10 @@ export function CartPage({ cart, setCart, navigate, setError, setMsg }) {
       return;
     }
     if (cart.length === 0) return;
+    if (!address.line1 || !address.city || !address.country) {
+      setError('Renseignez adresse, ville et pays pour la livraison.');
+      return;
+    }
     if (currencies.length > 1) {
       setError('Le panier contient plusieurs devises. Payez boutique par boutique ou uniformisez.');
       return;
@@ -87,12 +91,9 @@ export function CartPage({ cart, setCart, navigate, setError, setMsg }) {
       const body = {
         provider,
         items: cart.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
-        auto_shipping: true,
         express,
+        shipping_address: address,
       };
-      if (address.line1 && address.city && address.country) {
-        body.shipping_address = address;
-      }
       const data = await api('/api/checkout', {
         method: 'POST',
         token: session.access_token,

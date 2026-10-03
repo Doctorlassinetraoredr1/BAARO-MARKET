@@ -27,6 +27,8 @@ export default async function handler(req, res) {
     const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || user.id;
     const rl = await rateLimit(`upload:${ip}`, { limit: 30, windowMs: 60_000 });
     if (!rl.ok) throw new HttpError(429, `Too many requests. Retry in ${rl.retryAfter}s`);
+    const rlUser = await rateLimit(`upload:user:${user.id}`, { limit: 30, windowMs: 60_000 });
+    if (!rlUser.ok) throw new HttpError(429, `Too many requests. Retry in ${rlUser.retryAfter}s`);
     const body = parseBody(req);
 
     const contentType = String(body.content_type || '').toLowerCase();

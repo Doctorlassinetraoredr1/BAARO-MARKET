@@ -20,7 +20,7 @@ Marketplace multi-vendeurs : Vercel + Supabase + Cloudflare R2 + Stripe Connect 
 
 ## Démarrage
 1. Supabase : exécuter dans l'ordre  
-   `001` → … → `007_shipping_carriers.sql` → `008_review_ai.sql`.
+   `001` → … → `014_late_payments.sql` (dans l'ordre).
 2. Copier `.env.example` → variables Vercel / local.
 3. `npm --prefix frontend install && npm --prefix frontend run dev`
 4. Déployer sur Vercel.
@@ -126,3 +126,11 @@ Voir `.env.example` : Stripe, PayPal, Adyen, R2, Resend, `CRON_SECRET`, `REQUIRE
 - Exchange-rate table for multi-currency expansion
 - Audit event storage
 - PostgreSQL trigram search and cursor pagination
+
+## Correctifs de sécurité (audit)
+
+- Livraison : toujours calculée côté serveur (`shipping_total` client ignoré) ; adresse obligatoire.
+- Paiement reçu après annulation : commande rouverte si le stock peut être re-réservé, sinon ligne dans `payment_anomalies` (visible via `adminDashboard` → `open_payment_anomalies`).
+- Sessions Stripe/Adyen expirent avant le TTL des commandes (`ORDER_PENDING_TTL_MINUTES`).
+- Plafond de commandes non payées par acheteur : `MAX_PENDING_ORDERS_PER_BUYER` (10 par défaut).
+- Production : `npm run check:env:prod` exige Upstash (rate limit distribué).

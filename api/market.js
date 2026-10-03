@@ -1,6 +1,6 @@
 import { publicClient, userClient, requireUser, adminClient, env } from './_supabase.js';
 import { HttpError, json, method, sendError } from '../lib/http.js';
-import { validateShop, validateProduct, validateProductPatch, escapeLike, UUID_RE } from '../lib/validate.js';
+import { validateShop, validateProduct, validateProductPatch, needsReModeration, escapeLike, UUID_RE } from '../lib/validate.js';
 import { analyzeReview, summarizeProductReviews } from '../lib/review-ai.js';
 import { rateLimitAsync as rateLimit } from '../lib/ratelimit.js';
 
@@ -245,14 +245,21 @@ export default async function handler(req, res) {
 
     if (body.action === 'updateProduct') {
       if (!UUID_RE.test(String(body.id || ''))) throw new HttpError(400, 'Invalid id');
-      const { data: cur, error: cErr } = await admin.from('products').select('id,currency,shops!inner(owner_id)').eq('id', body.id).maybeSingle();
+      const { data: cur, error: cErr } = await admin
+        .from('products')
+        .select('id,currency,name,description,image_url,moderation_status,shops!inner(owner_id)')
+        .eq('id', body.id)
+        .maybeSingle();
       if (cErr) throw cErr;
       if (!cur || cur.shops.owner_id !== user.id) throw new HttpError(404, 'Not found');
       const patch = validateProductPatch(body, cur.currency);
       if (!Object.keys(patch).length) throw new HttpError(400, 'Nothing to update');
+      // Modifier nom / description / image d'une annonce déjà validée => nouvelle modération.
+      const reModerated = needsReModeration(cur, patch);
+      if (reModerated) patch.moderation_status = 'pending';
       const { data, error } = await admin.from('products').update(patch).eq('id', body.id).select().single();
       if (error) throw error;
-      return json(res, 200, { ok: true, product: data });
+      return json(res, 200, { ok: true, product: data, re_moderation: reModerated });
     }
 
     if (body.action === 'myOrders') {
@@ -383,14 +390,15 @@ export default async function handler(req, res) {
     if (body.action === 'adminDashboard') {
       const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle();
       if (profile?.role !== 'admin') throw new HttpError(403, 'Admin only');
-      const [{ count: shops }, { count: products }, { count: orders }, { count: disputes }, { count: flagged }] = await Promise.all([
+      const [{ count: shops }, { count: products }, { count: orders }, { count: disputes }, { count: flagged }, { count: anomalies }] = await Promise.all([
         admin.from('shops').select('*', { count:'exact', head:true }),
         admin.from('products').select('*', { count:'exact', head:true }).eq('moderation_status','pending'),
         admin.from('orders').select('*', { count:'exact', head:true }),
         admin.from('disputes').select('*', { count:'exact', head:true }).in('status',['open','investigating']),
         admin.from('reviews').select('*', { count:'exact', head:true }).neq('trust_status','normal'),
+        admin.from('payment_anomalies').select('*', { count:'exact', head:true }).is('resolved_at', null),
       ]);
-      return json(res,200,{ok:true,stats:{shops:shops||0,pending_products:products||0,orders:orders||0,open_disputes:disputes||0,flagged_reviews:flagged||0}});
+      return json(res,200,{ok:true,stats:{shops:shops||0,pending_products:products||0,orders:orders||0,open_disputes:disputes||0,flagged_reviews:flagged||0,open_payment_anomalies:anomalies||0}});
     }
 
     if (body.action === 'moderateReview') {
@@ -431,8 +439,9 @@ export default async function handler(req, res) {
         .maybeSingle();
       if (iErr) throw iErr;
       if (!item) throw new HttpError(400, 'Product not in this order');
-      const { data: prod } = await admin.from('products').select('id,shop_id').eq('id', body.product_id).maybeSingle();
+      const { data: prod } = await admin.from('products').select('id,shop_id,shops!inner(owner_id)').eq('id', body.product_id).maybeSingle();
       if (!prod) throw new HttpError(404, 'Product not found');
+      if (prod.shops?.owner_id === user.id) throw new HttpError(403, 'You cannot review your own products');
       const { data: review, error: rErr } = await admin
         .from('reviews')
         .insert({
