@@ -300,3 +300,19 @@ button.danger { background: var(--danger); border-color: var(--danger); }
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ——— Header : mobile ——— */
+.topbar { flex-wrap: wrap; }
+.topbar-brand { display: flex; align-items: center; gap: 12px; }
+.topbar select { padding: 6px 10px; margin: 0; width: auto; }
+.topbar nav button { margin: 0; padding: 7px 14px; font-size: 0.9rem; }
+@media (max-width: 720px) {
+  .topbar nav {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 4px 12px;
+    padding-bottom: 2px;
+  }
+}
