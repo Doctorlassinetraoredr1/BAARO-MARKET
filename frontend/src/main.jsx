@@ -13,7 +13,7 @@ import { LoginPage } from './pages/Auth.jsx';
 import { OrdersPage, OrderConfirmPage, CguPage } from './pages/Orders.jsx';
 import { SellerPage } from './pages/Seller.jsx';
 import { AdminPage } from './pages/Admin.jsx';
-import { I18nProvider, useI18n } from './i18n.js';
+import { I18nProvider, useI18n } from './i18n.jsx';
 
 function App() {
   const { dir } = useI18n();

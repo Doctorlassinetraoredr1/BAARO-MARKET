@@ -1,7 +1,7 @@
-import { LanguageSelect } from '../i18n.js';
+import { LanguageSelect } from '../i18n.jsx';
 import React from 'react';
 import { useAuth, sb } from '../auth.jsx';
-import { useI18n } from '../i18n.js';
+import { useI18n } from '../i18n.jsx';
 
 export function Header({ cartCount, navigate }) {
   const { session } = useAuth();
